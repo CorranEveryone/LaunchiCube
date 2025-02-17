@@ -137,15 +137,15 @@ elif PLAT_NIX:
             encrypted_data = b''
 
             # Encrypt header
-            encrypted_data += xtea.encrypt(struct.pack('>4I', *header[:2]), key)
-            encrypted_data += xtea.encrypt(struct.pack('>4I', *header[2:]), key)
+            encrypted_data += xtea._encrypt(struct.pack('>4I', *header[:2]), key)
+            encrypted_data += xtea._encrypt(struct.pack('>4I', *header[2:]), key)
 
             # Encrypt data
             for i in range(0, len(data), ENC_SIZE):
                 block = data[i:i + ENC_SIZE]
                 if len(block) < ENC_SIZE:
                     block = block.ljust(ENC_SIZE, b'\0')
-                encrypted_data += xtea.encrypt(block, key)
+                encrypted_data += xtea._encrypt(block, key)
 
             return encrypted_data
     finally:
