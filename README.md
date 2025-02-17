@@ -44,6 +44,8 @@ A simple multi-instance launcher for ClassiCube, inspired by MultiMC, and made i
 - 🟨 Misc
 	- 🟨 Account Switcher
   		- 🟨 Unix Encryption
+			- 🟩 Linux
+			- 🟥 MacOS
 
 ## Bugs
 

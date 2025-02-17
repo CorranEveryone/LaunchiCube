@@ -5,6 +5,8 @@ from os.path import exists, splitext, join
 from re import sub
 from requests import Session
 from sys import platform
+import xtea
+import struct
 
 PLAT_WIN = platform == 'win32' or platform == 'cygwin'
 PLAT_NIX = platform == 'linux'
@@ -81,6 +83,71 @@ if PLAT_WIN:
                 return b64encode(encrypted_bytes).decode("utf-8")
             else:
                 raise RuntimeError(f"Encryption failed. Error Code: {ctypes.windll.kernel32.GetLastError()}")
+    finally:
+        pass
+elif PLAT_NIX:
+    try:
+        def decodeMachineID(machineID):
+            MACHINEID_LEN = 32
+            length = length(machineID)
+            hex_values = [0] * MACHINEID_LEN
+            key = bytearray(MACHINEID_LEN // 2)
+
+            # Get each valid hex character
+            j = 0
+            for i in range(length):
+                c = int(machineID[i], 16) if machineID[i] in '0123456789abcdefABCDEF' else -1
+                if c != -1:
+                    hex_values[j] = c
+                    j += 1
+                    if j >= MACHINEID_LEN:
+                        break
+    
+            # Combine hex characters into bytes
+            for i in range(MACHINEID_LEN // 2):
+                key[i] = (hex_values[i * 2] << 4) | hex_values[i * 2 + 1]
+    
+            return key
+
+        def getMachineID():
+            id_files = ["/var/lib/dbus/machine-id", "/etc/machine-id"]
+            output = None
+            for i in id_files:
+                if output == None:
+                    try:
+                        i = open(i, "r")
+                        output = i.read()
+                        i.close()
+                    finally:
+                        pass
+            if output == None:
+                raise FileNotFoundError("Machine ID file was not found")
+            else:
+                output = decodeMachineID(output)
+                return output
+        
+        def encrypt_data(data):
+            ENC1 = 0xCC005EC0
+            ENC2 = 0x0DA4A0DE
+            ENC3 = 0xC0DED000
+            ENC_SIZE = 8  # 2 32-bit ints per block
+
+            key = getMachineID()
+            header = [ENC1, ENC2, ENC3, len(data)]
+            encrypted_data = b''
+
+            # Encrypt header
+            encrypted_data += xtea.encrypt(struct.pack('>4I', *header[:2]), key)
+            encrypted_data += xtea.encrypt(struct.pack('>4I', *header[2:]), key)
+
+            # Encrypt data
+            for i in range(0, len(data), ENC_SIZE):
+                block = data[i:i + ENC_SIZE]
+                if len(block) < ENC_SIZE:
+                    block = block.ljust(ENC_SIZE, b'\0')
+                encrypted_data += xtea.encrypt(block, key)
+
+            return encrypted_data
     finally:
         pass
 
