@@ -89,7 +89,7 @@ elif PLAT_NIX:
     try:
         def decodeMachineID(machineID):
             MACHINEID_LEN = 32
-            length = length(machineID)
+            length = len(machineID)
             hex_values = [0] * MACHINEID_LEN
             key = bytearray(MACHINEID_LEN // 2)
 
