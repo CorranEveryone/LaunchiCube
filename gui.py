@@ -9,6 +9,7 @@ import sys
 import tkinter as tk
 from tkinter import ttk
 import shutil
+from requests import get
 
 from utils import *
 
@@ -36,6 +37,8 @@ class gui:
         self.top_frame.pack(fill="x")
 
         tk.Button(self.top_frame, text="Add Instance", command=self.open_add_instance,
+                  bg="#7289DA", fg="white", font=("Arial", 12, "bold")).pack(pady=10, padx=10, side="left")
+        tk.Button(self.top_frame, text="Update", command=self.update,
                   bg="#7289DA", fg="white", font=("Arial", 12, "bold")).pack(pady=10, padx=10, side="left")
 
         self.right_frame = tk.Frame(root, bg="#3C3F41", width=250)
@@ -85,6 +88,20 @@ class gui:
                 self.root.after_cancel(self.resize_after_id)
             self.resize_after_id = self.root.after(10, self.load_instances)
         last_instances_columns = instances_columns
+        
+    def update(self):
+        def save_link_as_file(link, filepath, bytes=False):
+            r = get(link)
+            with open(filepath, f"w{'b' if bytes else ''}") as f:
+                f.write(r.content if bytes else r.text)
+
+        linkbase = "https://raw.githubusercontent.com/Tycho10101/LaunchiCube/refs/heads/main/"
+        save_link_as_file(f"{linkbase}misc/installer_backend.py", "installer_backend.py")
+        from installer_backend import installer_backend
+        installer_backend.install()
+        os.remove("installer_backend.py")
+        subprocess.Popen(["python", "main.py"])
+        quit()
 
     def select_instance(self, instance):
         logo_path = f"instances/{instance['dir']}/logo.png"
